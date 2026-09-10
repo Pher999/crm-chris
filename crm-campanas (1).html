@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seguimiento de campañas — MEGA CABLE</title>
+<style>
+  :root{
+    --bg:#0F1720;
+    --panel:#161F28;
+    --panel2:#1C2732;
+    --text:#E8ECEF;
+    --muted:#8A97A3;
+    --border:#2A3540;
+    --accent:#E8B04B;
+    --accent-dim:#4A3D1F;
+    --teal:#4FA8A0;
+    --red:#C96A5A;
+    --font-ui: 'Inter', -apple-system, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;}
+  .crm{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--font-ui);
+    min-height:100vh;
+    padding:28px 20px 60px;
+  }
+  .crm-header{
+    display:flex; justify-content:space-between; align-items:baseline;
+    max-width:1080px; margin:0 auto 22px; flex-wrap:wrap; gap:8px;
+  }
+  .crm-title{
+    font-size:20px; font-weight:600; letter-spacing:-0.01em;
+  }
+  .crm-sub{
+    color:var(--muted); font-size:13px;
+  }
+  .tabs{
+    display:flex; gap:2px; max-width:1080px; margin:0 auto 20px;
+    border-bottom:1px solid var(--border);
+  }
+  .tab{
+    padding:10px 16px; cursor:pointer; color:var(--muted);
+    font-size:13.5px; border-bottom:2px solid transparent;
+    user-select:none;
+  }
+  .tab.active{
+    color:var(--text); border-bottom:2px solid var(--accent);
+  }
+  .panel{
+    max-width:1080px; margin:0 auto;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    padding:18px;
+    margin-bottom:16px;
+  }
+  .card-title{
+    font-size:14px; font-weight:600; margin:0 0 12px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  table{
+    width:100%; border-collapse:collapse; font-size:13px;
+  }
+  th{
+    text-align:left; color:var(--muted); font-weight:500;
+    font-size:11.5px; text-transform:none;
+    padding:6px 8px; border-bottom:1px solid var(--border);
+  }
+  td{
+    padding:6px 8px; border-bottom:1px solid var(--border);
+    vertical-align:middle;
+  }
+  tr:last-child td{border-bottom:none;}
+  input, select{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:4px;
+    padding:5px 7px;
+    font-size:13px;
+    font-family:inherit;
+    width:100%;
+  }
+  input:focus, select:focus{
+    outline:1px solid var(--accent);
+    border-color:var(--accent);
+  }
+  .num{ font-family:var(--font-mono); }
+  .btn{
+    background:var(--panel2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:6px 12px;
+    border-radius:5px;
+    font-size:12.5px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .btn:hover{ border-color:var(--accent); }
+  .btn-add{
+    color:var(--accent); border-color:var(--accent-dim);
+    background:transparent;
+  }
+  .btn-icon{
+    background:none; border:none; color:var(--muted);
+    cursor:pointer; font-size:14px; padding:2px 6px;
+  }
+  .btn-icon:hover{ color:var(--red); }
+  .kpi-row{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:12px;
+    margin-bottom:16px;
+  }
+  .kpi{
+    background:var(--panel); border:1px solid var(--border);
+    border-radius:6px; padding:14px 16px;
+  }
+  .kpi-label{ font-size:11.5px; color:var(--muted); margin-bottom:6px; }
+  .kpi-value{ font-family:var(--font-mono); font-size:22px; font-weight:600; }
+  .kpi-value.accent{ color:var(--accent); }
+  .pill{
+    display:inline-block; padding:2px 8px; border-radius:10px;
+    font-size:11.5px; font-family:var(--font-ui);
+  }
+  .pill-nuevo{ background:#2A3540; color:#B8C2CC; }
+  .pill-contactado{ background:#243B4A; color:#7FC3D9; }
+  .pill-interesado{ background:#3D3520; color:var(--accent); }
+  .pill-cliente{ background:#20362F; color:var(--teal); }
+  .pill-perdido{ background:#3A2622; color:var(--red); }
+  .empty{
+    color:var(--muted); font-size:13px; padding:20px 0; text-align:center;
+  }
+  .rank-bar{
+    height:5px; background:var(--panel2); border-radius:3px; overflow:hidden; margin-top:4px;
+  }
+  .rank-fill{ height:100%; background:var(--accent); }
+  .best-row td{
+    background:rgba(79,168,160,0.12);
+    box-shadow: inset 3px 0 0 var(--teal);
+  }
+  .best-tag{
+    display:inline-block; margin-left:6px; padding:1px 7px; border-radius:9px;
+    background:rgba(79,168,160,0.18); color:var(--teal); font-size:10.5px; font-weight:600;
+  }
+  .chart-row{
+    display:grid; grid-template-columns:140px 1fr 52px; align-items:center; gap:10px;
+    padding:7px 0;
+  }
+  .chart-row + .chart-row{ border-top:1px solid var(--border); }
+  .chart-label{ font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .chart-track{ height:14px; background:var(--panel2); border-radius:3px; overflow:hidden; }
+  .chart-fill{ height:100%; background:var(--accent); border-radius:3px; }
+  .chart-fill.is-best{ background:var(--teal); }
+  .chart-pct{ font-family:var(--font-mono); font-size:12.5px; text-align:right; }
+  .card-title .btn{ font-size:12px; }
+  @media print{
+    .tabs, .no-print{ display:none !important; }
+    body, .crm{ background:#fff !important; color:#111 !important; padding:0 !important; }
+    .card{ border-color:#ccc !important; break-inside:avoid; }
+    .kpi{ border-color:#ccc !important; }
+    .kpi-value, .kpi-value.accent{ color:#111 !important; }
+    th{ background:#eee !important; color:#111 !important; }
+    .best-row td{ background:#e6f4ea !important; }
+    .chart-fill{ background:#999 !important; }
+    .chart-fill.is-best{ background:#4FA8A0 !important; }
+    .print-only{ display:block !important; }
+  }
+  .print-only{ display:none; }
+  .loading{ color:var(--muted); text-align:center; padding:40px; }
+  ::placeholder{ color:#54606B; }
+</style>
+</head>
+<body>
+
+<div class="crm" id="crmRoot">
+  <div class="loading">Cargando datos…</div>
+</div>
+
+<script>
+(function(){
+  const STATES = ['Nuevo','Contactado','Interesado','Cliente','Perdido'];
+  const STATE_CLASS = {Nuevo:'pill-nuevo',Contactado:'pill-contactado',Interesado:'pill-interesado',Cliente:'pill-cliente',Perdido:'pill-perdido'};
+
+  let campaigns = [];
+  let leads = [];
+  let activeTab = 'campanas';
+  let loaded = false;
+
+  const root = document.getElementById('crmRoot');
+  const uid = () => Math.random().toString(36).slice(2,10);
+  const STORAGE_PREFIX = 'crm-mega-cable:';
+
+  async function loadData(){
+    try{
+      const c = localStorage.getItem(STORAGE_PREFIX+'campaigns');
+      campaigns = c ? JSON.parse(c) : [];
+    }catch(e){ campaigns = []; }
+    try{
+      const l = localStorage.getItem(STORAGE_PREFIX+'leads');
+      leads = l ? JSON.parse(l) : [];
+    }catch(e){ leads = []; }
+    loaded = true;
+    render();
+  }
+
+  async function saveCampaigns(){
+    try{ localStorage.setItem(STORAGE_PREFIX+'campaigns', JSON.stringify(campaigns)); }
+    catch(e){ console.error('Error guardando campañas', e); }
+  }
+  async function saveLeads(){
+    try{ localStorage.setItem(STORAGE_PREFIX+'leads', JSON.stringify(leads)); }
+    catch(e){ console.error('Error guardando mensajes', e); }
+  }
+
+  function fmtNum(n){
+    n = Number(n)||0;
+    return n.toLocaleString('es-MX');
+  }
+  function fmtPct(n){
+    if(!isFinite(n)) return '—';
+    return (n*100).toFixed(1)+'%';
+  }
+  function fmtMoney(n){
+    if(n===null||n===undefined||n==='') return '—';
+    return '$'+Number(n).toLocaleString('es-MX',{maximumFractionDigits:2});
+  }
+
+  function campaignStats(camp){
+    const campLeads = leads.filter(l=>l.campaignId===camp.id);
+    const total = campLeads.length;
+    const clientes = campLeads.filter(l=>l.estado==='Cliente').length;
+    const impresiones = Number(camp.impresiones)||0;
+    const interacciones = Number(camp.interacciones)||0;
+    const inversion = camp.inversion!=='' && camp.inversion!=null ? Number(camp.inversion) : null;
+    return {
+      total, clientes,
+      tasaConversion: total>0 ? clientes/total : NaN,
+      ctr: impresiones>0 ? interacciones/impresiones : NaN,
+      costoPorLead: inversion!=null && total>0 ? inversion/total : null,
+      costoPorCliente: inversion!=null && clientes>0 ? inversion/clientes : null
+    };
+  }
+
+  // ---------- Render ----------
+  function render(){
+    if(!loaded){ root.innerHTML = '<div class="loading">Cargando datos…</div>'; return; }
+    root.innerHTML = `
+      <div class="crm-header">
+        <div>
+          <div class="crm-title">Seguimiento de campañas</div>
+          <div class="crm-sub">Registra tus campañas y mensajes para comparar resultados</div>
+        </div>
+      </div>
+      <div class="tabs">
+        ${tabBtn('campanas','Campañas')}
+        ${tabBtn('mensajes','Mensajes')}
+        ${tabBtn('resumen','Resumen')}
+      </div>
+      <div class="panel" id="panelContent"></div>
+    `;
+    document.querySelectorAll('.tab').forEach(t=>{
+      t.addEventListener('click',()=>{ activeTab = t.dataset.tab; render(); });
+    });
+    const panel = document.getElementById('panelContent');
+    if(activeTab==='campanas') panel.innerHTML = renderCampaigns();
+    if(activeTab==='mensajes') panel.innerHTML = renderLeads();
+    if(activeTab==='resumen') panel.innerHTML = renderSummary();
+    bindEvents();
+  }
+
+  function tabBtn(id,label){
+    return `<div class="tab ${activeTab===id?'active':''}" data-tab="${id}">${label}</div>`;
+  }
+
+  function renderCampaigns(){
+    const rows = campaigns.map(c=>`
+      <tr data-id="${c.id}">
+        <td><input data-field="nombre" value="${escapeHtml(c.nombre)}" placeholder="Ej. Familias FB"/></td>
+        <td><input data-field="periodo" value="${escapeHtml(c.periodo)}" placeholder="Sep 2026"/></td>
+        <td><input class="num" data-field="impresiones" type="number" value="${c.impresiones}" placeholder="0"/></td>
+        <td><input class="num" data-field="alcance" type="number" value="${c.alcance}" placeholder="0"/></td>
+        <td><input class="num" data-field="interacciones" type="number" value="${c.interacciones}" placeholder="0"/></td>
+        <td><input class="num" data-field="inversion" type="number" value="${c.inversion}" placeholder="opcional"/></td>
+        <td style="text-align:center;"><button class="btn-icon del-camp" data-id="${c.id}">✕</button></td>
+      </tr>
+    `).join('');
+    return `
+      <div class="card">
+        <div class="card-title">
+          <span>Campañas</span>
+          <button class="btn btn-add" id="addCampaign">+ Nueva campaña</button>
+        </div>
+        ${campaigns.length===0 ? '<div class="empty">Aún no has agregado campañas. Los números de impresiones, alcance e interacciones los sacas de Meta Ads Manager.</div>' : `
+        <table>
+          <thead><tr>
+            <th>Campaña</th><th>Periodo</th><th>Impresiones</th><th>Alcance</th><th>Interacciones</th><th>Inversión ($)</th><th></th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    `;
+  }
+
+  function renderLeads(){
+    const campOptions = campaigns.map(c=>`<option value="${c.id}">${escapeHtml(c.nombre||'(sin nombre)')}</option>`).join('');
+    const rows = leads.slice().sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||'')).map(l=>{
+      const camp = campaigns.find(c=>c.id===l.campaignId);
+      return `
+      <tr data-id="${l.id}">
+        <td><input data-field="fecha" type="date" value="${l.fecha||''}"/></td>
+        <td><input data-field="contacto" value="${escapeHtml(l.contacto)}" placeholder="Nombre / teléfono"/></td>
+        <td>
+          <select data-field="campaignId">
+            <option value="">— sin campaña —</option>
+            ${campaigns.map(c=>`<option value="${c.id}" ${c.id===l.campaignId?'selected':''}>${escapeHtml(c.nombre||'(sin nombre)')}</option>`).join('')}
+          </select>
+        </td>
+        <td>
+          <select data-field="estado">
+            ${STATES.map(s=>`<option value="${s}" ${s===l.estado?'selected':''}>${s}</option>`).join('')}
+          </select>
+        </td>
+        <td><input data-field="notas" value="${escapeHtml(l.notas)}" placeholder="Notas"/></td>
+        <td style="text-align:center;"><button class="btn-icon del-lead" data-id="${l.id}">✕</button></td>
+      </tr>
+    `;}).join('');
+    return `
+      <div class="card">
+        <div class="card-title">
+          <span>Mensajes / leads</span>
+          <button class="btn btn-add" id="addLead">+ Nuevo mensaje</button>
+        </div>
+        ${leads.length===0 ? '<div class="empty">Registra aquí cada mensaje que te llegue y a qué campaña pertenece.</div>' : `
+        <table>
+          <thead><tr>
+            <th>Fecha</th><th>Contacto</th><th>Campaña</th><th>Estado</th><th>Notas</th><th></th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    `;
+  }
+
+  function computeSummary(){
+    const totalLeads = leads.length;
+    const totalClientes = leads.filter(l=>l.estado==='Cliente').length;
+    const totalImpresiones = campaigns.reduce((s,c)=>s+(Number(c.impresiones)||0),0);
+    const totalAlcance = campaigns.reduce((s,c)=>s+(Number(c.alcance)||0),0);
+
+    const withStats = campaigns.map(c=>({camp:c, stats:campaignStats(c)}));
+    const ranked = withStats.slice().sort((a,b)=>{
+      const ac = isFinite(a.stats.tasaConversion)?a.stats.tasaConversion:-1;
+      const bc = isFinite(b.stats.tasaConversion)?b.stats.tasaConversion:-1;
+      return bc-ac;
+    });
+    const maxRate = Math.max(0.0001, ...ranked.map(r=>isFinite(r.stats.tasaConversion)?r.stats.tasaConversion:0));
+    // La campaña "mejor" es la de mayor tasa de conversión, siempre que tenga al menos un mensaje.
+    const bestId = ranked.length && isFinite(ranked[0].stats.tasaConversion) ? ranked[0].camp.id : null;
+    return {totalLeads, totalClientes, totalImpresiones, totalAlcance, ranked, maxRate, bestId};
+  }
+
+  function renderSummary(){
+    const {totalLeads, totalClientes, totalImpresiones, totalAlcance, ranked, maxRate, bestId} = computeSummary();
+
+    const rows = ranked.map(r=>{
+      const c = r.camp, s = r.stats;
+      const isBest = c.id===bestId;
+      return `
+      <tr class="${isBest?'best-row':''}">
+        <td>${escapeHtml(c.nombre||'(sin nombre)')}${isBest?'<span class="best-tag">Mejor conversión</span>':''}<div style="color:var(--muted);font-size:11px;">${escapeHtml(c.periodo||'')}</div></td>
+        <td class="num">${fmtNum(c.impresiones)}</td>
+        <td class="num">${fmtNum(c.alcance)}</td>
+        <td class="num">${fmtNum(c.interacciones)}</td>
+        <td class="num">${fmtPct(s.ctr)}</td>
+        <td class="num">${s.total}</td>
+        <td class="num">${s.clientes}</td>
+        <td>
+          <div class="num">${fmtPct(s.tasaConversion)}</div>
+          <div class="rank-bar"><div class="rank-fill" style="width:${isFinite(s.tasaConversion)? (s.tasaConversion/maxRate*100):0}%"></div></div>
+        </td>
+        <td class="num">${s.costoPorLead!=null?fmtMoney(s.costoPorLead):'—'}</td>
+      </tr>`;
+    }).join('');
+
+    const chartRows = ranked.map(r=>{
+      const c = r.camp, s = r.stats;
+      const isBest = c.id===bestId;
+      const pct = isFinite(s.tasaConversion) ? s.tasaConversion : 0;
+      return `
+      <div class="chart-row">
+        <div class="chart-label" title="${escapeHtml(c.nombre||'(sin nombre)')}">${escapeHtml(c.nombre||'(sin nombre)')}</div>
+        <div class="chart-track"><div class="chart-fill ${isBest?'is-best':''}" style="width:${(pct/maxRate*100).toFixed(1)}%"></div></div>
+        <div class="chart-pct">${fmtPct(s.tasaConversion)}</div>
+      </div>`;
+    }).join('');
+
+    const today = new Date().toLocaleDateString('es-MX', {year:'numeric', month:'long', day:'numeric'});
+
+    return `
+      <div class="print-only" style="margin-bottom:16px;">
+        <div style="font-size:18px;font-weight:700;">Informe de campañas</div>
+        <div style="font-size:12px;color:#666;">Generado el ${today}</div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi"><div class="kpi-label">Mensajes totales</div><div class="kpi-value">${fmtNum(totalLeads)}</div></div>
+        <div class="kpi"><div class="kpi-label">Conversiones (clientes)</div><div class="kpi-value accent">${fmtNum(totalClientes)}</div></div>
+        <div class="kpi"><div class="kpi-label">Impresiones totales</div><div class="kpi-value">${fmtNum(totalImpresiones)}</div></div>
+        <div class="kpi"><div class="kpi-label">Alcance total</div><div class="kpi-value">${fmtNum(totalAlcance)}</div></div>
+      </div>
+      ${campaigns.length>0 ? `
+      <div class="card">
+        <div class="card-title"><span>Tasa de conversión por campaña</span></div>
+        ${chartRows}
+      </div>` : ''}
+      <div class="card">
+        <div class="card-title">
+          <span>Comparativo por campaña</span>
+          ${campaigns.length>0 ? '<button class="btn no-print" id="downloadReport">Descargar informe</button>' : ''}
+        </div>
+        ${campaigns.length===0 ? '<div class="empty">Agrega campañas y mensajes para ver el comparativo.</div>' : `
+        <table>
+          <thead><tr>
+            <th>Campaña</th><th>Impresiones</th><th>Alcance</th><th>Interacciones</th><th>CTR</th>
+            <th>Mensajes</th><th>Clientes</th><th>Tasa conv.</th><th>Costo/lead</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`}
+      </div>
+    `;
+  }
+
+  function escapeHtml(v){
+    if(v===undefined||v===null) return '';
+    return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function downloadReport(){
+    const {totalLeads, totalClientes, totalImpresiones, totalAlcance, ranked, maxRate, bestId} = computeSummary();
+    const today = new Date().toLocaleDateString('es-MX', {year:'numeric', month:'long', day:'numeric'});
+
+    const rowsHtml = ranked.map(r=>{
+      const c = r.camp, s = r.stats;
+      const isBest = c.id===bestId;
+      return `<tr style="${isBest?'background:#e6f4ea;':''}">
+        <td>${escapeHtml(c.nombre||'(sin nombre)')}${isBest?' <span style="background:#d3ede4;color:#1b6f63;border-radius:9px;padding:1px 7px;font-size:11px;">Mejor conversión</span>':''}<div style="color:#888;font-size:11px;">${escapeHtml(c.periodo||'')}</div></td>
+        <td style="text-align:right;">${fmtNum(c.impresiones)}</td>
+        <td style="text-align:right;">${fmtNum(c.alcance)}</td>
+        <td style="text-align:right;">${fmtNum(c.interacciones)}</td>
+        <td style="text-align:right;">${fmtPct(s.ctr)}</td>
+        <td style="text-align:right;">${s.total}</td>
+        <td style="text-align:right;">${s.clientes}</td>
+        <td style="text-align:right;">${fmtPct(s.tasaConversion)}</td>
+        <td style="text-align:right;">${s.costoPorLead!=null?fmtMoney(s.costoPorLead):'—'}</td>
+      </tr>`;
+    }).join('');
+
+    const chartHtml = ranked.map(r=>{
+      const c = r.camp, s = r.stats;
+      const isBest = c.id===bestId;
+      const pct = isFinite(s.tasaConversion) ? s.tasaConversion : 0;
+      return `<div style="display:grid;grid-template-columns:150px 1fr 55px;align-items:center;gap:10px;padding:6px 0;border-top:1px solid #eee;">
+        <div style="font-size:12.5px;">${escapeHtml(c.nombre||'(sin nombre)')}</div>
+        <div style="height:14px;background:#eee;border-radius:3px;overflow:hidden;"><div style="height:100%;width:${(pct/maxRate*100).toFixed(1)}%;background:${isBest?'#4FA8A0':'#E8B04B'};"></div></div>
+        <div style="text-align:right;font-size:12.5px;">${fmtPct(s.tasaConversion)}</div>
+      </div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Informe de campañas</title>
+<style>
+  body{ font-family:-apple-system,system-ui,sans-serif; color:#1a1a1a; max-width:900px; margin:40px auto; padding:0 20px; }
+  h1{ font-size:22px; margin-bottom:2px; }
+  .sub{ color:#777; font-size:13px; margin-bottom:24px; }
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:26px; }
+  .kpi{ border:1px solid #ddd; border-radius:6px; padding:12px 14px; }
+  .kpi-label{ font-size:11.5px; color:#777; margin-bottom:6px; }
+  .kpi-value{ font-size:20px; font-weight:700; }
+  h2{ font-size:15px; margin:26px 0 10px; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; padding:6px 8px; border-bottom:2px solid #ddd; color:#555; font-size:11.5px; }
+  td{ padding:6px 8px; border-bottom:1px solid #eee; }
+  @media print{ body{ margin:0.5in; } }
+</style></head>
+<body>
+  <h1>Informe de campañas</h1>
+  <div class="sub">Generado el ${today}</div>
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-label">Mensajes totales</div><div class="kpi-value">${fmtNum(totalLeads)}</div></div>
+    <div class="kpi"><div class="kpi-label">Conversiones (clientes)</div><div class="kpi-value">${fmtNum(totalClientes)}</div></div>
+    <div class="kpi"><div class="kpi-label">Impresiones totales</div><div class="kpi-value">${fmtNum(totalImpresiones)}</div></div>
+    <div class="kpi"><div class="kpi-label">Alcance total</div><div class="kpi-value">${fmtNum(totalAlcance)}</div></div>
+  </div>
+  <h2>Tasa de conversión por campaña</h2>
+  ${chartHtml || '<div style="color:#888;">Sin datos aún.</div>'}
+  <h2>Comparativo por campaña</h2>
+  <table>
+    <thead><tr><th>Campaña</th><th>Impresiones</th><th>Alcance</th><th>Interacciones</th><th>CTR</th><th>Mensajes</th><th>Clientes</th><th>Tasa conv.</th><th>Costo/lead</th></tr></thead>
+    <tbody>${rowsHtml || '<tr><td colspan="9" style="color:#888;">Sin datos aún.</td></tr>'}</tbody>
+  </table>
+</body></html>`;
+
+    try{
+      const blob = new Blob([html], {type:'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `informe-campanas-${new Date().toISOString().slice(0,10)}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    }catch(e){
+      console.error('No se pudo descargar el informe', e);
+      alert('No se pudo generar la descarga en este navegador. Intenta abrir el CRM en una pestaña completa del navegador.');
+    }
+  }
+
+  // ---------- Events ----------
+  function bindEvents(){
+    const addC = document.getElementById('addCampaign');
+    if(addC) addC.addEventListener('click', async ()=>{
+      campaigns.push({id:uid(), nombre:'', periodo:'', impresiones:'', alcance:'', interacciones:'', inversion:''});
+      await saveCampaigns(); render();
+    });
+    const addL = document.getElementById('addLead');
+    if(addL) addL.addEventListener('click', async ()=>{
+      leads.push({id:uid(), fecha:new Date().toISOString().slice(0,10), contacto:'', campaignId:campaigns[0]?campaigns[0].id:'', estado:'Nuevo', notas:''});
+      await saveLeads(); render();
+    });
+
+    document.querySelectorAll('.del-camp').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        campaigns = campaigns.filter(c=>c.id!==btn.dataset.id);
+        await saveCampaigns(); render();
+      });
+    });
+    document.querySelectorAll('.del-lead').forEach(btn=>{
+      btn.addEventListener('click', async ()=>{
+        leads = leads.filter(l=>l.id!==btn.dataset.id);
+        await saveLeads(); render();
+      });
+    });
+
+    const dl = document.getElementById('downloadReport');
+    if(dl) dl.addEventListener('click', downloadReport);
+
+    document.querySelectorAll('#panelContent tr[data-id] input, #panelContent tr[data-id] select').forEach(el=>{
+      el.addEventListener('change', async (e)=>{
+        const tr = e.target.closest('tr');
+        const id = tr.dataset.id;
+        const field = e.target.dataset.field;
+        const val = e.target.value;
+        if(activeTab==='campanas'){
+          const c = campaigns.find(x=>x.id===id);
+          if(c){ c[field]=val; await saveCampaigns(); }
+        } else if(activeTab==='mensajes'){
+          const l = leads.find(x=>x.id===id);
+          if(l){ l[field]=val; await saveLeads(); if(field==='estado'||field==='campaignId'){} }
+        }
+      });
+    });
+  }
+
+  loadData();
+})();
+</script>
+</body>
+</html>
